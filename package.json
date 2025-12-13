@@ -1,0 +1,16 @@
+{
+  "name": "market-terminal",
+  "version": "1.0.0",
+  "description": "Professional Stock Analysis Terminal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["stock", "trading", "terminal", "finance"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

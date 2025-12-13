@@ -1,0 +1,14 @@
+{
+  "timestamp": "20251213T130910",
+  "files": [
+    {
+      "original": "D:\\3.6\\server.js",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\011_20251213T130910\\server.js"
+    },
+    {
+      "original": "D:\\3.6\\public\\index.html",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\011_20251213T130910\\index.html"
+    }
+  ],
+  "prompt": "use the demo webp in gui folder and make it as a background video in hero section behind the text and when user scroll play frames forward and when user scroll up play video backwards"
+}

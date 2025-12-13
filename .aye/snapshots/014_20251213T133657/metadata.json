@@ -1,0 +1,10 @@
+{
+  "timestamp": "20251213T133657",
+  "files": [
+    {
+      "original": "D:\\3.6\\server.js",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\014_20251213T133657\\server.js"
+    }
+  ],
+  "prompt": "      throw er; // Unhandled 'error' event fix this"
+}

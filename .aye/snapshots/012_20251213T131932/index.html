@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Market Terminal - Professional Stock Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+            overflow-x: hidden;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.1);
+        }
+        
+        /* Custom Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1s cubic-bezier(0.5, 0, 0, 1);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .delay-100 { transition-delay: 0.1s; }
+        .delay-200 { transition-delay: 0.2s; }
+        .delay-300 { transition-delay: 0.3s; }
+
+        /* Floating Animation */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        .float-slow { animation: float 6s ease-in-out infinite; }
+        .float-medium { animation: float 4s ease-in-out infinite; }
+        .float-fast { animation: float 3s ease-in-out infinite; }
+
+        /* Chart Line Animation */
+        @keyframes drawLine {
+            0% { stroke-dashoffset: 1000; }
+            100% { stroke-dashoffset: 0; }
+        }
+        .chart-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawLine 2.5s ease-out forwards;
+        }
+
+        /* Grid Background */
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+        }
+
+        /* Chat Widget Styles */
+        .chat-widget-btn {
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .chat-widget-btn:hover {
+            transform: scale(1.1);
+        }
+        .chat-window {
+            transform-origin: bottom right;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+            pointer-events: none;
+        }
+        .chat-window.open {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: all;
+        }
+        .message-enter {
+            animation: messageSlide 0.3s ease-out forwards;
+        }
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 transition-all duration-300" id="navbar">
+        <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-xl border-b border-white/5 supports-[backdrop-filter]:bg-slate-900/60"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 h-20 relative flex items-center justify-between">
+            <!-- Left: Logo & Badge -->
+            <div class="flex items-center gap-4">
+                <a href="#" class="flex items-center gap-2 group">
+                    <div class="relative w-8 h-8 flex items-center justify-center bg-gradient-to-tr from-sky-500 to-emerald-500 rounded-lg shadow-lg group-hover:shadow-sky-500/25 transition">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <span class="text-lg font-bold tracking-tight text-white">MARKET<span class="text-sky-400">TERMINAL</span></span>
+                </a>
+                <span class="hidden sm:inline-block px-2 py-0.5 rounded-full bg-slate-800 border border-slate-700 text-[10px] font-mono text-slate-400">v1.0.2</span>
+            </div>
+
+            <!-- Center: Links -->
+            <div class="hidden md:flex items-center gap-8">
+                <a href="#features" class="text-sm font-medium text-slate-400 hover:text-white transition relative group">
+                    Features
+                    <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-sky-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#trial" class="text-sm font-medium text-slate-400 hover:text-white transition relative group">
+                    Trial Mode
+                    <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-emerald-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="#docs" class="text-sm font-medium text-slate-400 hover:text-white transition relative group">
+                    Docs
+                    <span class="absolute -bottom-1 left-0 w-0 h-0.5 bg-purple-500 transition-all duration-300 group-hover:w-full"></span>
+                </a>
+            </div>
+
+            <!-- Right: Actions -->
+            <div class="flex items-center gap-5">
+                <!-- Github Icon -->
+                <a href="#" class="text-slate-400 hover:text-white transition">
+                    <span class="sr-only">GitHub</span>
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+                
+                <a href="#download" class="group relative px-5 py-2 rounded-full bg-sky-500 text-slate-900 font-bold text-sm overflow-hidden transition-all hover:bg-sky-400 hover:shadow-[0_0_20px_rgba(56,189,248,0.4)]">
+                    <span class="relative z-10 flex items-center gap-2">
+                        Get App
+                        <svg class="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero-section" class="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden bg-grid">
+        <!-- Video Background -->
+        <div class="absolute inset-0 -z-30 overflow-hidden">
+            <video id="hero-video" class="w-full h-full object-cover opacity-40" muted playsinline preload="metadata">
+                <source src="/gui/demo.webp" type="video/webp">
+                <source src="/gui/demo.mp4" type="video/mp4">
+            </video>
+            <div class="absolute inset-0 bg-slate-900/60"></div>
+        </div>
+
+        <!-- Parallax Background Elements -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-sky-500/20 rounded-full blur-[120px] -z-10 parallax" data-speed="0.2"></div>
+        <div class="absolute top-1/4 right-0 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[100px] -z-10 parallax" data-speed="0.4"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 text-center relative z-10">
+            <div class="reveal inline-block px-4 py-1.5 rounded-full border border-sky-500/30 bg-sky-500/10 text-sky-400 text-xs font-bold tracking-wide mb-6 uppercase">
+                v1.0 Now Available
+            </div>
+            <h1 class="reveal delay-100 text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-tight">
+                Trade Smarter with <br>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-sky-200 to-emerald-400">Real-Time Intelligence</span>
+            </h1>
+            <p class="reveal delay-200 text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                A powerful Python-based desktop terminal for stock analysis, portfolio tracking, and simulation. 
+                Built for speed, designed for traders.
+            </p>
+            <div class="reveal delay-300 flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="#download" class="px-8 py-4 rounded-lg bg-sky-500 text-slate-900 font-bold text-lg hover:bg-sky-400 transition shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:shadow-[0_0_30px_rgba(56,189,248,0.5)] flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M0 0h11.377v11.372H0zM12.623 0H24v11.372H12.623zM0 12.623h11.377V24H0zM12.623 12.623H24V24H12.623z"/></svg>
+                    Download for Windows
+                </a>
+                <a href="#features" class="px-8 py-4 rounded-lg border border-slate-600 hover:bg-slate-800 transition font-medium text-lg">
+                    Explore Features
+                </a>
+            </div>
+            
+            <!-- App Mockup Representation -->
+            <div class="reveal delay-300 mt-20 relative mx-auto max-w-5xl rounded-xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden transform hover:scale-[1.01] transition duration-700">
+                <div class="h-8 bg-slate-800 border-b border-slate-700 flex items-center px-4 gap-2">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                </div>
+                <!-- Abstract UI Representation -->
+                <div class="p-6 grid grid-cols-12 gap-6 h-[500px] text-left">
+                    <!-- Sidebar -->
+                    <div class="col-span-3 bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 flex flex-col gap-3">
+                        <div class="h-4 w-20 bg-slate-700 rounded animate-pulse"></div>
+                        <div class="h-10 w-full bg-slate-700/50 rounded flex items-center px-3 border-l-4 border-sky-500">
+                            <div class="w-full flex justify-between">
+                                <span class="text-xs text-sky-400 font-mono">^NSEI</span>
+                                <span class="text-xs text-emerald-400">+0.45%</span>
+                            </div>
+                        </div>
+                        <div class="h-10 w-full bg-slate-700/30 rounded flex items-center px-3">
+                            <div class="w-full flex justify-between">
+                                <span class="text-xs text-slate-400 font-mono">AAPL</span>
+                                <span class="text-xs text-red-400">-1.20%</span>
+                            </div>
+                        </div>
+                        <div class="h-10 w-full bg-slate-700/30 rounded flex items-center px-3">
+                             <div class="w-full flex justify-between">
+                                <span class="text-xs text-slate-400 font-mono">TSLA</span>
+                                <span class="text-xs text-emerald-400">+2.15%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Main -->
+                    <div class="col-span-9 flex flex-col gap-6">
+                        <div class="flex justify-between items-end">
+                            <div>
+                                <div class="text-4xl font-bold text-white font-mono">19,425.50</div>
+                                <div class="text-emerald-400 font-mono">+85.40 (+0.44%)</div>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="px-4 py-2 bg-sky-500 text-slate-900 font-bold rounded text-sm">BUY</div>
+                                <div class="px-4 py-2 bg-slate-700 text-white font-bold rounded text-sm">SELL</div>
+                            </div>
+                        </div>
+                        <!-- Chart Area -->
+                        <div class="flex-1 bg-slate-800/30 rounded-lg border border-slate-700/50 relative overflow-hidden">
+                            <!-- Fake Chart Line -->
+                            <svg class="absolute bottom-0 left-0 w-full h-3/4" preserveAspectRatio="none" viewBox="0 0 100 100">
+                                <path d="M0,80 Q20,60 40,75 T80,40 T100,20" fill="none" stroke="#38bdf8" stroke-width="0.5" class="chart-line" />
+                                <path d="M0,80 Q20,60 40,75 T80,40 T100,20 V100 H0 Z" fill="rgba(56, 189, 248, 0.1)" class="opacity-0 animate-[fadeIn_2s_ease-out_1s_forwards]" />
+                            </svg>
+                        </div>
+                        <!-- Stats Grid -->
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="bg-slate-800/30 p-3 rounded border border-slate-700/30">
+                                <div class="text-[10px] uppercase text-slate-500 font-bold">Open</div>
+                                <div class="text-sm font-mono">19,350.00</div>
+                            </div>
+                            <div class="bg-slate-800/30 p-3 rounded border border-slate-700/30">
+                                <div class="text-[10px] uppercase text-slate-500 font-bold">High</div>
+                                <div class="text-sm font-mono">19,450.00</div>
+                            </div>
+                            <div class="bg-slate-800/30 p-3 rounded border border-slate-700/30">
+                                <div class="text-[10px] uppercase text-slate-500 font-bold">Volume</div>
+                                <div class="text-sm font-mono">2.4M</div>
+                            </div>
+                            <div class="bg-slate-800/30 p-3 rounded border border-slate-700/30">
+                                <div class="text-[10px] uppercase text-slate-500 font-bold">Mkt Cap</div>
+                                <div class="text-sm font-mono">1.2T</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 bg-slate-900 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="reveal text-3xl font-bold mb-4">Advanced Terminal Features</h2>
+                <p class="reveal delay-100 text-slate-400">Everything you need to analyze and track the market.</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="reveal delay-100 group p-8 rounded-2xl bg-slate-800/50 border border-slate-700 hover:border-sky-500/50 hover:bg-slate-800 transition duration-500 hover:-translate-y-2">
+                    <div class="w-12 h-12 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-400 mb-6 group-hover:scale-110 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-sky-400 transition">Real-Time Data</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Connects directly to global market feeds via YFinance. View live intraday charts (1m, 5m, 15m) and historical performance instantly.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="reveal delay-200 group p-8 rounded-2xl bg-slate-800/50 border border-slate-700 hover:border-emerald-500/50 hover:bg-slate-800 transition duration-500 hover:-translate-y-2">
+                    <div class="w-12 h-12 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-6 group-hover:scale-110 transition">
+                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-emerald-400 transition">Secure Cloud Sync</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Powered by Supabase. Your portfolio, holdings, and transaction history are securely synced across sessions via encrypted auth.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="reveal delay-300 group p-8 rounded-2xl bg-slate-800/50 border border-slate-700 hover:border-purple-500/50 hover:bg-slate-800 transition duration-500 hover:-translate-y-2">
+                    <div class="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 mb-6 group-hover:scale-110 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 group-hover:text-purple-400 transition">Portfolio Management</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Track your Holdings and P&L. Export your entire trade history to CSV with a single click for tax reporting.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trial Mode Section -->
+    <section id="trial" class="py-24 relative overflow-hidden">
+        <!-- Floating Background Elements -->
+        <div class="absolute top-20 right-20 text-slate-800 font-bold text-9xl opacity-20 select-none parallax" data-speed="-0.1">BULL</div>
+        <div class="absolute bottom-20 left-20 text-slate-800 font-bold text-9xl opacity-20 select-none parallax" data-speed="0.1">BEAR</div>
+        
+        <div class="absolute top-1/2 left-1/4 w-4 h-4 rounded-full bg-sky-500 blur-sm float-slow"></div>
+        <div class="absolute top-1/3 right-1/4 w-3 h-3 rounded-full bg-emerald-500 blur-sm float-fast"></div>
+
+        <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center relative">
+            <div class="reveal">
+                <div class="inline-block px-3 py-1 rounded bg-sky-500/20 text-sky-400 text-xs font-bold mb-4">RISK-FREE TRADING</div>
+                <h2 class="text-4xl font-bold mb-6">Practice with Trial Mode</h2>
+                <p class="text-slate-400 text-lg mb-8 leading-relaxed">
+                    New to the market? Switch to the built-in <strong>Trial Playground</strong>. 
+                    Trade simulated stocks like <em>SIM-ALPHA</em> and <em>SIM-BETA</em> in a realistic, volatility-simulated environment without risking real capital.
+                </p>
+                <ul class="space-y-4 mb-8">
+                    <li class="flex items-center gap-3 text-slate-300">
+                        <div class="w-6 h-6 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        Simulated Volatility & Market Movements
+                    </li>
+                    <li class="flex items-center gap-3 text-slate-300">
+                        <div class="w-6 h-6 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        Instant Order Execution
+                    </li>
+                    <li class="flex items-center gap-3 text-slate-300">
+                        <div class="w-6 h-6 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        Reset & Replay capabilities
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="reveal delay-200 relative">
+                <!-- Floating Tickers -->
+                <div class="absolute -top-10 -right-10 bg-slate-800 border border-slate-700 p-3 rounded-lg shadow-xl z-20 float-medium">
+                    <span class="block text-xs text-slate-400">SIM-ALPHA</span>
+                    <span class="block font-mono text-emerald-400">+1.2%</span>
+                </div>
+                <div class="absolute -bottom-5 -left-5 bg-slate-800 border border-slate-700 p-3 rounded-lg shadow-xl z-20 float-slow">
+                    <span class="block text-xs text-slate-400">SIM-BETA</span>
+                    <span class="block font-mono text-red-400">-0.5%</span>
+                </div>
+
+                <div class="bg-slate-800/80 backdrop-blur-md rounded-xl p-6 border border-slate-700 shadow-2xl rotate-2 hover:rotate-0 transition duration-500">
+                    <!-- Simulation UI Mockup -->
+                    <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-4">
+                        <h3 class="font-bold text-sky-400">TRIAL PLAYGROUND</h3>
+                        <button class="px-3 py-1 bg-red-500/20 text-red-400 text-xs rounded animate-pulse">SIMULATION LIVE</button>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center p-3 bg-slate-900 rounded border border-slate-700/50">
+                            <div>
+                                <div class="font-bold">SIM-ALPHA</div>
+                                <div class="text-xs text-slate-500">Tech Sector Sim</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-mono">154.20</div>
+                                <div class="text-xs text-emerald-400">+1.2%</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-slate-900 rounded border border-slate-700/50">
+                            <div>
+                                <div class="font-bold">SIM-BETA</div>
+                                <div class="text-xs text-slate-500">Index Sim</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-mono">2,450.50</div>
+                                <div class="text-xs text-red-400">-0.5%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="docs" class="py-24 bg-slate-900 relative border-t border-slate-800">
+        <div class="max-w-4xl mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="reveal text-3xl font-bold mb-4">Quick Start Guide</h2>
+                <p class="reveal delay-100 text-slate-400">Get up and running in minutes.</p>
+            </div>
+
+            <div class="reveal delay-200 bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="text-xl font-bold text-sky-400 mb-2">1. Prerequisites</h3>
+                        <p class="text-slate-400 mb-4">Ensure you have Python 3.8 or higher installed on your system.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-xl font-bold text-sky-400 mb-2">2. Install Dependencies</h3>
+                        <p class="text-slate-400 mb-3">Market Terminal relies on several powerful libraries. Install them via pip:</p>
+                        <div class="bg-slate-900 p-4 rounded-lg font-mono text-sm text-emerald-400 border border-slate-700">
+                            pip install pandas yfinance matplotlib supabase
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-xl font-bold text-sky-400 mb-2">3. Run the Application</h3>
+                        <p class="text-slate-400 mb-3">Launch the terminal interface:</p>
+                        <div class="bg-slate-900 p-4 rounded-lg font-mono text-sm text-emerald-400 border border-slate-700">
+                            python app.py
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section id="download" class="py-24 bg-gradient-to-b from-slate-900 to-slate-800">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <h2 class="reveal text-3xl md:text-5xl font-bold mb-8">Start Your Trading Journey</h2>
+            <p class="reveal delay-100 text-slate-400 mb-10">Download Market Terminal today. Open source and free for personal use.</p>
+            
+            <div class="reveal delay-200 flex justify-center">
+                <a href="#" onclick="alert('Download started! (Simulation)'); return false;" class="flex items-center justify-center gap-3 px-10 py-5 bg-white text-slate-900 rounded-lg font-bold hover:bg-sky-50 transition transform hover:scale-105 shadow-xl">
+                    <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M0 0h11.377v11.372H0zM12.623 0H24v11.372H12.623zM0 12.623h11.377V24H0zM12.623 12.623H24V24H12.623z"/></svg>
+                    <div class="text-left">
+                        <div class="text-xs font-normal text-slate-500">Download for</div>
+                        <div class="text-lg leading-none">Windows 10/11</div>
+                    </div>
+                </a>
+            </div>
+            <p class="mt-8 text-xs text-slate-500">Requires Python 3.8+. macOS version coming soon.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-slate-800 text-center text-slate-500 text-sm">
+        <p>&copy; 2024 Market Terminal Project. All rights reserved.</p>
+    </footer>
+
+    <!-- AI Chat Widget -->
+    <div class="fixed bottom-6 right-6 z-50">
+        <!-- Chat Window -->
+        <div id="chat-window" class="chat-window absolute bottom-20 right-0 w-[350px] bg-slate-800 border border-slate-700 rounded-xl shadow-2xl flex flex-col overflow-hidden h-[450px]">
+            <div class="bg-slate-900 p-4 border-b border-slate-700 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span class="font-bold text-sm">Support Bot</span>
+                </div>
+                <button onclick="toggleChat()" class="text-slate-400 hover:text-white">&times;</button>
+            </div>
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-800/90">
+                <div class="flex flex-col items-start">
+                    <div class="bg-slate-700 text-slate-200 px-4 py-2 rounded-lg rounded-tl-none text-sm max-w-[85%]">
+                        Hi! I'm the Market Terminal AI. Ask me about features, installation, or download requirements.
+                    </div>
+                </div>
+            </div>
+            <div class="p-3 bg-slate-900 border-t border-slate-700">
+                <form onsubmit="handleChat(event)" class="flex gap-2">
+                    <input type="text" id="chat-input" placeholder="Ask a question..." class="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500 transition">
+                    <button type="submit" class="bg-sky-500 hover:bg-sky-400 text-slate-900 p-2 rounded-lg transition">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Toggle Button -->
+        <button onclick="toggleChat()" class="chat-widget-btn w-14 h-14 bg-sky-500 hover:bg-sky-400 rounded-full flex items-center justify-center text-slate-900 shadow-lg">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+        </button>
+    </div>
+
+    <script>
+        // Reveal Animation
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        // Parallax
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            document.querySelectorAll('.parallax').forEach(el => {
+                const speed = el.getAttribute('data-speed');
+                el.style.transform = `translateY(${scrolled * speed}px)`;
+            });
+        });
+
+        // Video Scroll Scrubbing Logic
+        const video = document.getElementById('hero-video');
+        const hero = document.getElementById('hero-section');
+
+        if (video && hero) {
+            // Ensure metadata is loaded
+            video.addEventListener('loadedmetadata', () => {
+                video.pause();
+                video.currentTime = 0;
+            });
+
+            window.addEventListener('scroll', () => {
+                if (!video.duration) return;
+                
+                // Get scroll position
+                const scrollTop = window.scrollY;
+                const heroHeight = hero.offsetHeight;
+                
+                // Calculate progress: 0 at top, 1 when hero leaves view
+                // We map the full video duration to the scroll height of the hero section
+                let progress = scrollTop / heroHeight;
+                
+                // Clamp between 0 and 1 (optional, or let it loop if desired, but clamping is safer for scrubbing)
+                progress = Math.max(0, Math.min(1, progress));
+                
+                // Update video time
+                // Use requestAnimationFrame for smoother visual updates
+                requestAnimationFrame(() => {
+                   video.currentTime = video.duration * progress; 
+                });
+            });
+        }
+
+        // Hero Background Scroll Animation
+        (function() {
+            const heroSection = document.getElementById('hero');
+            const heroBgImage = document.getElementById('hero-bg-image');
+            
+            if (!heroSection || !heroBgImage) return;
+            
+            let ticking = false;
+            
+            function updateBackground() {
+                const heroRect = heroSection.getBoundingClientRect();
+                const heroHeight = heroSection.offsetHeight;
+                const windowHeight = window.innerHeight;
+                
+                // Calculate scroll progress within hero section (0 to 1)
+                const scrollProgress = Math.max(0, Math.min(1, -heroRect.top / (heroHeight - windowHeight * 0.5)));
+                
+                // Scroll down: increase opacity and scale
+                // Scroll up: decrease opacity and scale (reverse)
+                const opacity = 0.15 + (scrollProgress * 0.25); // 0.15 to 0.4
+                const scale = 1 + (scrollProgress * 0.1); // 1 to 1.1
+                
+                heroBgImage.style.opacity = opacity;
+                heroBgImage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                
+                ticking = false;
+            }
+            
+            window.addEventListener('scroll', function() {
+                if (!ticking) {
+                    requestAnimationFrame(updateBackground);
+                    ticking = true;
+                }
+            });
+            
+            // Initial update
+            updateBackground();
+        })();
+
+        // Chat Logic
+        function toggleChat() {
+            document.getElementById('chat-window').classList.toggle('open');
+        }
+
+        function handleChat(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim().toLowerCase();
+            if (!msg) return;
+
+            // Add User Message
+            addMessage(input.value, 'user');
+            input.value = '';
+
+            // Bot Logic
+            setTimeout(() => {
+                let response = "I'm not sure about that. Try asking about 'download', 'requirements', 'features', 'safety', or 'redistribution'.";
+                
+                if (msg.includes('download') || msg.includes('install')) {
+                    response = "You can download the app from the button below. It's a Windows application, but the source code runs on any platform with Python.";
+                }
+                else if (msg.includes('python') || msg.includes('requirements') || msg.includes('library') || msg.includes('dependencies')) {
+                    response = "You need Python 3.8+ and the following libraries: pandas, yfinance, matplotlib, and supabase.";
+                }
+                else if (msg.includes('mac') || msg.includes('linux') || msg.includes('macos')) {
+                    response = "Currently, we have a pre-packaged installer for Windows, but Mac/Linux users can run the source code directly via Python!";
+                }
+                else if (msg.includes('free') || msg.includes('cost') || msg.includes('price')) {
+                    response = "Yes! Market Terminal is 100% open source and free for personal use.";
+                }
+                else if (msg.includes('feature') || msg.includes('can do')) {
+                    response = "Key features include Real-time Data, Cloud Sync via Supabase, and a Trial Mode for risk-free simulation.";
+                }
+                // Virus/Safety questions
+                else if (msg.includes('virus') || msg.includes('malware') || msg.includes('safe') || msg.includes('secure') || msg.includes('trojan')) {
+                    response = "🛡️ Market Terminal is 100% safe and virus-free! It's open source, so you can inspect every line of code. The app is built with Python and uses only trusted libraries (pandas, yfinance, matplotlib, supabase). Your antivirus may flag it as unknown software since it's not from a major publisher - this is a false positive.";
+                }
+                // Modify/Redistribute questions
+                else if (msg.includes('modify') || msg.includes('redistribute') || msg.includes('resell') || msg.includes('commercial') || msg.includes('sell') || msg.includes('distribution')) {
+                    response = "⚠️ NO - Redistribution is NOT allowed. Market Terminal is licensed for personal use only. You may NOT modify and redistribute, resell, or use it for commercial purposes. The source code is viewable for transparency, but all rights are reserved by the original author.";
+                }
+                // Support/Help
+                else if (msg.includes('support') || msg.includes('help') || msg.includes('contact') || msg.includes('issue') || msg.includes('bug')) {
+                    response = "📧 For support, please visit our GitHub Issues page or use the full AI Chat page for detailed assistance. We typically respond within 24-48 hours.";
+                }
+
+                addMessage(response, 'bot');
+            }, 600);
+        }
+
+        function addMessage(text, sender) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'} message-enter`;
+            
+            const bubble = document.createElement('div');
+            bubble.className = sender === 'user' 
+                ? 'bg-sky-500 text-slate-900 px-4 py-2 rounded-lg rounded-tr-none text-sm max-w-[85%] font-medium'
+                : 'bg-slate-700 text-slate-200 px-4 py-2 rounded-lg rounded-tl-none text-sm max-w-[85%]';
+            bubble.innerText = text;
+            
+            div.appendChild(bubble);
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Support Chat - Market Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(56, 189, 248, 0.05) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(56, 189, 248, 0.05) 1px, transparent 1px);
+        }
+        .message-enter {
+            animation: messageSlide 0.3s ease-out forwards;
+        }
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .typing-indicator span {
+            animation: typing 1.4s infinite;
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #64748b;
+            border-radius: 50%;
+            margin: 0 2px;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        .suggestion-btn {
+            transition: all 0.2s ease;
+        }
+        .suggestion-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased bg-grid min-h-screen flex flex-col">
+
+    <!-- Navigation -->
+    <nav class="w-full bg-slate-900/80 backdrop-blur-xl border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/" class="flex items-center gap-2 group">
+                    <div class="w-8 h-8 flex items-center justify-center bg-gradient-to-tr from-sky-500 to-emerald-500 rounded-lg">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <span class="text-lg font-bold text-white">MARKET<span class="text-sky-400">TERMINAL</span></span>
+                </a>
+                <span class="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 text-xs font-bold">AI CHAT</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Language Selector -->
+                <div class="relative">
+                    <select id="language-select" onchange="changeLanguage(this.value)" class="appearance-none bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-4 py-2 pr-8 focus:outline-none focus:border-sky-500 cursor-pointer">
+                        <option value="en">🇺🇸 English</option>
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="hi">🇮🇳 हिंदी</option>
+                        <option value="fr">🇫🇷 Français</option>
+                    </select>
+                    <svg class="w-4 h-4 absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+                <a href="/" class="text-slate-400 hover:text-white text-sm transition flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    <span id="nav-back">Back to Home</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Chat Container -->
+    <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full p-6">
+        <!-- Chat Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-sky-500 to-emerald-500 mb-4">
+                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
+            </div>
+            <h1 id="chat-title" class="text-2xl font-bold mb-2">Market Terminal AI Assistant</h1>
+            <p id="chat-subtitle" class="text-slate-400">Ask me anything about Market Terminal - features, installation, pricing, safety, and more!</p>
+        </div>
+
+        <!-- Chat Messages -->
+        <div id="chat-messages" class="flex-1 bg-slate-800/50 border border-slate-700 rounded-2xl p-6 overflow-y-auto mb-6 min-h-[400px] max-h-[500px] space-y-4">
+            <!-- Initial Bot Message -->
+            <div class="flex flex-col items-start message-enter">
+                <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <div class="bg-slate-700 text-slate-200 px-4 py-3 rounded-2xl rounded-tl-md text-sm max-w-[80%]" id="welcome-message">
+                        👋 Hello! I'm the Market Terminal AI Assistant. I can help you with:
+                        <ul class="mt-2 space-y-1 list-disc list-inside text-slate-300">
+                            <li>Features and capabilities</li>
+                            <li>Download and installation</li>
+                            <li>System requirements</li>
+                            <li>Safety and security</li>
+                            <li>Licensing and redistribution</li>
+                        </ul>
+                        <p class="mt-2">How can I assist you today?</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Suggestions -->
+        <div class="mb-4">
+            <p id="suggestions-label" class="text-xs text-slate-500 mb-2">Quick questions:</p>
+            <div class="flex flex-wrap gap-2" id="suggestions-container">
+                <button onclick="askQuestion('features')" class="suggestion-btn px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-xs text-slate-300 hover:border-sky-500 hover:text-sky-400">
+                    <span data-suggestion="features">What are the features?</span>
+                </button>
+                <button onclick="askQuestion('download')" class="suggestion-btn px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-xs text-slate-300 hover:border-sky-500 hover:text-sky-400">
+                    <span data-suggestion="download">How to download?</span>
+                </button>
+                <button onclick="askQuestion('safety')" class="suggestion-btn px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-xs text-slate-300 hover:border-emerald-500 hover:text-emerald-400">
+                    <span data-suggestion="safety">Is it safe?</span>
+                </button>
+                <button onclick="askQuestion('redistribute')" class="suggestion-btn px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-xs text-slate-300 hover:border-red-500 hover:text-red-400">
+                    <span data-suggestion="redistribute">Can I redistribute?</span>
+                </button>
+                <button onclick="askQuestion('pricing')" class="suggestion-btn px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-xs text-slate-300 hover:border-purple-500 hover:text-purple-400">
+                    <span data-suggestion="pricing">Is it free?</span>
+                </button>
+                <button onclick="askQuestion('support')" class="suggestion-btn px-3 py-1.5 bg-slate-800 border border-slate-700 rounded-full text-xs text-slate-300 hover:border-amber-500 hover:text-amber-400">
+                    <span data-suggestion="support">Get support</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <form onsubmit="handleChat(event)" class="flex gap-3">
+            <input type="text" id="chat-input" placeholder="Type your question..." class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-5 py-4 text-white focus:outline-none focus:border-sky-500 transition text-sm">
+            <button type="submit" class="bg-sky-500 hover:bg-sky-400 text-slate-900 px-6 py-4 rounded-xl transition font-bold flex items-center gap-2">
+                <span id="send-text">Send</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+            </button>
+        </form>
+    </div>
+
+    <!-- Footer -->
+    <footer class="py-6 border-t border-slate-800 text-center text-slate-500 text-sm">
+        <p>&copy; 2024 Market Terminal Project. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Multi-language support
+        let currentLanguage = 'en';
+
+        const translations = {
+            en: {
+                navBack: 'Back to Home',
+                chatTitle: 'Market Terminal AI Assistant',
+                chatSubtitle: 'Ask me anything about Market Terminal - features, installation, pricing, safety, and more!',
+                suggestionsLabel: 'Quick questions:',
+                sendText: 'Send',
+                inputPlaceholder: 'Type your question...',
+                suggestions: {
+                    features: 'What are the features?',
+                    download: 'How to download?',
+                    requirements: 'System requirements?',
+                    pricing: 'Is it free?',
+                    safety: 'Is it safe?',
+                    redistribute: 'Can I redistribute?',
+                    support: 'Get support'
+                },
+                welcomeMessage: `👋 Hello! I'm the Market Terminal AI Assistant. I can help you with:<ul class="mt-2 space-y-1 list-disc list-inside text-slate-300"><li>Features and capabilities</li><li>Download and installation</li><li>System requirements</li><li>Safety and security</li><li>Licensing and redistribution</li></ul><p class="mt-2">How can I assist you today?</p>`,
+                responses: {
+                    features: "Market Terminal offers: \n\n📊 **Real-Time Data** - Live market feeds via YFinance with intraday charts (1m, 5m, 15m)\n\n☁️ **Cloud Sync** - Secure portfolio sync via Supabase\n\n💰 **Portfolio Management** - Track holdings, P&L, and export to CSV\n\n🎮 **Trial Mode** - Risk-free trading simulation",
+                    download: "You can download Market Terminal from our homepage. Click the 'Download for Windows' button. For Mac/Linux users, you can run the Python source code directly!",
+                    requirements: "System Requirements:\n\n• Python 3.8 or higher\n• Libraries: pandas, yfinance, matplotlib, supabase\n• Windows 10/11 (for packaged app)\n• Mac/Linux can run source code",
+                    pricing: "Yes! Market Terminal is 100% FREE and open source for personal use. No hidden fees, no subscriptions.",
+                    trial: "Trial Mode lets you practice trading with simulated stocks (SIM-ALPHA, SIM-BETA) in a realistic environment. Perfect for beginners!",
+                    safety: "🛡️ Market Terminal is 100% SAFE and virus-free!\n\n• Open source - inspect every line of code\n• Uses only trusted libraries (pandas, yfinance, matplotlib, supabase)\n• No data collection or telemetry\n• Your antivirus may flag it as 'unknown' - this is a false positive since we're not a major publisher",
+                    redistribute: "⚠️ NO - Redistribution is NOT allowed!\n\n• Licensed for PERSONAL USE ONLY\n• You may NOT modify and redistribute\n• You may NOT resell or commercialize\n• You may NOT include in other products\n• Source code is viewable for transparency only\n\nAll rights reserved by the original author.",
+                    support: "📧 Need help? Here's how to get support:\n\n• Visit our GitHub Issues page\n• Use this AI Chat for quick answers\n• Response time: 24-48 hours\n• Check the Docs section on our homepage",
+                    default: "I'm not sure about that. Try asking about 'features', 'download', 'requirements', 'pricing', 'safety', or 'redistribution'."
+                }
+            },
+            es: {
+                navBack: 'Volver al Inicio',
+                chatTitle: 'Asistente IA de Market Terminal',
+                chatSubtitle: 'Pregúntame sobre Market Terminal - funciones, instalación, precios, seguridad y más!',
+                suggestionsLabel: 'Preguntas rápidas:',
+                sendText: 'Enviar',
+                inputPlaceholder: 'Escribe tu pregunta...',
+                suggestions: {
+                    features: '¿Cuáles son las funciones?',
+                    download: '¿Cómo descargar?',
+                    requirements: '¿Requisitos del sistema?',
+                    pricing: '¿Es gratis?',
+                    safety: '¿Es seguro?',
+                    redistribute: '¿Puedo redistribuir?',
+                    support: 'Obtener soporte'
+                },
+                welcomeMessage: `👋 ¡Hola! Soy el Asistente IA de Market Terminal. Puedo ayudarte con:<ul class="mt-2 space-y-1 list-disc list-inside text-slate-300"><li>Funciones y capacidades</li><li>Descarga e instalación</li><li>Requisitos del sistema</li><li>Seguridad y protección</li><li>Licencia y redistribución</li></ul><p class="mt-2">¿Cómo puedo ayudarte hoy?</p>`,
+                responses: {
+                    features: "Market Terminal ofrece:\n\n📊 **Datos en Tiempo Real** - Feeds de mercado en vivo via YFinance con gráficos intradía\n\n☁️ **Sincronización en la Nube** - Sincronización segura via Supabase\n\n💰 **Gestión de Portafolio** - Rastrea holdings, P&L y exporta a CSV\n\n🎮 **Modo Prueba** - Simulación de trading sin riesgo",
+                    download: "Puedes descargar Market Terminal desde nuestra página principal. ¡Haz clic en 'Descargar para Windows'. Para usuarios de Mac/Linux, pueden ejecutar el código fuente en Python!",
+                    requirements: "Requisitos del Sistema:\n\n• Python 3.8 o superior\n• Librerías: pandas, yfinance, matplotlib, supabase\n• Windows 10/11 (para app empaquetada)\n• Mac/Linux pueden ejecutar código fuente",
+                    pricing: "¡Sí! Market Terminal es 100% GRATIS y código abierto para uso personal. Sin tarifas ocultas, sin suscripciones.",
+                    trial: "El Modo Prueba te permite practicar trading con acciones simuladas (SIM-ALPHA, SIM-BETA) en un entorno realista. ¡Perfecto para principiantes!",
+                    safety: "🛡️ Market Terminal es 100% SEGURO y libre de virus!\n\n• Código abierto - inspecciona cada línea\n• Usa solo librerías confiables (pandas, yfinance, matplotlib, supabase)\n• Sin recolección de datos ni telemetría\n• Tu antivirus puede marcarlo como 'desconocido' - es un falso positivo",
+                    redistribute: "⚠️ NO - ¡La redistribución NO está permitida!\n\n• Licenciado solo para USO PERSONAL\n• NO puedes modificar y redistribuir\n• NO puedes revender o comercializar\n• NO puedes incluir en otros productos\n• El código fuente es visible solo para transparencia\n\nTodos los derechos reservados.",
+                    support: "📧 ¿Necesitas ayuda? Cómo obtener soporte:\n\n• Visita nuestra página de Issues en GitHub\n• Usa este Chat IA para respuestas rápidas\n• Tiempo de respuesta: 24-48 horas\n• Revisa la sección de Docs en nuestra página",
+                    default: "No estoy seguro de eso. Intenta preguntar sobre 'funciones', 'descarga', 'requisitos', 'precios', 'seguridad' o 'redistribución'."
+                }
+            },
+            hi: {
+                navBack: 'होम पर वापस जाएं',
+                chatTitle: 'मार्केट टर्मिनल AI सहायक',
+                chatSubtitle: 'मार्केट टर्मिनल के बारे में कुछ भी पूछें - फीचर्स, इंस्टॉलेशन, कीमत, सुरक्षा और भी बहुत कुछ!',
+                suggestionsLabel: 'त्वरित प्रश्न:',
+                sendText: 'भेजें',
+                inputPlaceholder: 'अपना प्रश्न लिखें...',
+                suggestions: {
+                    features: 'फीचर्स क्या हैं?',
+                    download: 'डाउनलोड कैसे करें?',
+                    requirements: 'सिस्टम आवश्यकताएं?',
+                    pricing: 'क्या यह मुफ्त है?',
+                    safety: 'क्या यह सुरक्षित है?',
+                    redistribute: 'क्या मैं वितरित कर सकता हूं?',
+                    support: 'सहायता प्राप्त करें'
+                },
+                welcomeMessage: `👋 नमस्ते! मैं मार्केट टर्मिनल AI सहायक हूं। मैं इनमें आपकी मदद कर सकता हूं:<ul class="mt-2 space-y-1 list-disc list-inside text-slate-300"><li>फीचर्स और क्षमताएं</li><li>डाउनलोड और इंस्टॉलेशन</li><li>सिस्टम आवश्यकताएं</li><li>सुरक्षा और संरक्षण</li><li>लाइसेंस और वितरण</li></ul><p class="mt-2">आज मैं आपकी कैसे मदद कर सकता हूं?</p>`,
+                responses: {
+                    features: "मार्केट टर्मिनल प्रदान करता है:\n\n📊 **रियल-टाइम डेटा** - YFinance के माध्यम से लाइव मार्केट फीड्स\n\n☁️ **क्लाउड सिंक** - Supabase के माध्यम से सुरक्षित सिंक\n\n💰 **पोर्टफोलियो प्रबंधन** - होल्डिंग्स, P&L ट्रैक करें और CSV में एक्सपोर्ट करें\n\n🎮 **ट्रायल मोड** - जोखिम-मुक्त ट्रेडिंग सिमुलेशन",
+                    download: "आप हमारे होमपेज से मार्केट टर्मिनल डाउनलोड कर सकते हैं। 'Windows के लिए डाउनलोड करें' बटन पर क्लिक करें। Mac/Linux उपयोगकर्ता सीधे Python सोर्स कोड चला सकते हैं!",
+                    requirements: "सिस्टम आवश्यकताएं:\n\n• Python 3.8 या उससे ऊपर\n• लाइब्रेरी: pandas, yfinance, matplotlib, supabase\n• Windows 10/11 (पैकेज्ड ऐप के लिए)\n• Mac/Linux सोर्स कोड चला सकते हैं",
+                    pricing: "हां! मार्केट टर्मिनल व्यक्तिगत उपयोग के लिए 100% मुफ्त और ओपन सोर्स है। कोई छिपी फीस नहीं, कोई सब्सक्रिप्शन नहीं।",
+                    trial: "ट्रायल मोड आपको सिम्युलेटेड स्टॉक्स (SIM-ALPHA, SIM-BETA) के साथ यथार्थवादी वातावरण में ट्रेडिंग का अभ्यास करने देता है। शुरुआती लोगों के लिए बिल्कुल सही!",
+                    safety: "🛡️ मार्केट टर्मिनल 100% सुरक्षित और वायरस-मुक्त है!\n\n• ओपन सोर्स - हर लाइन का निरीक्षण करें\n• केवल विश्वसनीय लाइब्रेरी का उपयोग (pandas, yfinance, matplotlib, supabase)\n• कोई डेटा संग्रह या टेलीमेट्री नहीं\n• आपका एंटीवायरस इसे 'अज्ञात' के रूप में चिह्नित कर सकता है - यह झूठी सकारात्मक है",
+                    redistribute: "⚠️ नहीं - पुनर्वितरण की अनुमति नहीं है!\n\n• केवल व्यक्तिगत उपयोग के लिए लाइसेंस\n• आप संशोधित और पुनर्वितरित नहीं कर सकते\n• आप पुनर्विक्रय या व्यावसायीकरण नहीं कर सकते\n• आप अन्य उत्पादों में शामिल नहीं कर सकते\n• सोर्स कोड केवल पारदर्शिता के लिए देखने योग्य है\n\nसभी अधिकार मूल लेखक द्वारा सुरक्षित।",
+                    support: "📧 मदद चाहिए? सहायता कैसे प्राप्त करें:\n\n• हमारे GitHub Issues पेज पर जाएं\n• त्वरित उत्तरों के लिए इस AI Chat का उपयोग करें\n• प्रतिक्रिया समय: 24-48 घंटे\n• हमारे होमपेज पर Docs सेक्शन देखें",
+                    default: "मुझे इसके बारे में निश्चित नहीं है। 'फीचर्स', 'डाउनलोड', 'आवश्यकताएं', 'कीमत', 'सुरक्षा' या 'वितरण' के बारे में पूछने का प्रयास करें।"
+                }
+            },
+            fr: {
+                navBack: 'Retour à l\'accueil',
+                chatTitle: 'Assistant IA Market Terminal',
+                chatSubtitle: 'Posez-moi des questions sur Market Terminal - fonctionnalités, installation, tarifs, sécurité et plus!',
+                suggestionsLabel: 'Questions rapides:',
+                sendText: 'Envoyer',
+                inputPlaceholder: 'Tapez votre question...',
+                suggestions: {
+                    features: 'Quelles sont les fonctionnalités?',
+                    download: 'Comment télécharger?',
+                    requirements: 'Configuration requise?',
+                    pricing: 'Est-ce gratuit?',
+                    safety: 'Est-ce sécurisé?',
+                    redistribute: 'Puis-je redistribuer?',
+                    support: 'Obtenir de l\'aide'
+                },
+                welcomeMessage: `👋 Bonjour! Je suis l'Assistant IA de Market Terminal. Je peux vous aider avec:<ul class="mt-2 space-y-1 list-disc list-inside text-slate-300"><li>Fonctionnalités et capacités</li><li>Téléchargement et installation</li><li>Configuration requise</li><li>Sécurité et protection</li><li>Licence et redistribution</li></ul><p class="mt-2">Comment puis-je vous aider aujourd'hui?</p>`,
+                responses: {
+                    features: "Market Terminal offre:\n\n📊 **Données en Temps Réel** - Flux de marché en direct via YFinance avec graphiques intrajournaliers\n\n☁️ **Synchronisation Cloud** - Synchronisation sécurisée via Supabase\n\n💰 **Gestion de Portefeuille** - Suivez vos positions, P&L et exportez en CSV\n\n🎮 **Mode Essai** - Simulation de trading sans risque",
+                    download: "Vous pouvez télécharger Market Terminal depuis notre page d'accueil. Cliquez sur 'Télécharger pour Windows'. Les utilisateurs Mac/Linux peuvent exécuter le code source Python directement!",
+                    requirements: "Configuration Requise:\n\n• Python 3.8 ou supérieur\n• Bibliothèques: pandas, yfinance, matplotlib, supabase\n• Windows 10/11 (pour l'app packagée)\n• Mac/Linux peuvent exécuter le code source",
+                    pricing: "Oui! Market Terminal est 100% GRATUIT et open source pour un usage personnel. Pas de frais cachés, pas d'abonnements.",
+                    trial: "Le Mode Essai vous permet de pratiquer le trading avec des actions simulées (SIM-ALPHA, SIM-BETA) dans un environnement réaliste. Parfait pour les débutants!",
+                    safety: "🛡️ Market Terminal est 100% SÛR et sans virus!\n\n• Open source - inspectez chaque ligne de code\n• Utilise uniquement des bibliothèques fiables (pandas, yfinance, matplotlib, supabase)\n• Pas de collecte de données ni de télémétrie\n• Votre antivirus peut le signaler comme 'inconnu' - c'est un faux positif",
+                    redistribute: "⚠️ NON - La redistribution N'EST PAS autorisée!\n\n• Licence pour USAGE PERSONNEL uniquement\n• Vous NE pouvez PAS modifier et redistribuer\n• Vous NE pouvez PAS revendre ou commercialiser\n• Vous NE pouvez PAS inclure dans d'autres produits\n• Le code source est visible uniquement pour la transparence\n\nTous droits réservés par l'auteur original.",
+                    support: "📧 Besoin d'aide? Comment obtenir du support:\n\n• Visitez notre page GitHub Issues\n• Utilisez ce Chat IA pour des réponses rapides\n• Temps de réponse: 24-48 heures\n• Consultez la section Docs sur notre page d'accueil",
+                    default: "Je ne suis pas sûr de cela. Essayez de poser des questions sur 'fonctionnalités', 'téléchargement', 'configuration', 'prix', 'sécurité' ou 'redistribution'."
+                }
+            }
+        };
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            const t = translations[lang];
+            
+            // Update UI elements
+            document.getElementById('nav-back').textContent = t.navBack;
+            document.getElementById('chat-title').textContent = t.chatTitle;
+            document.getElementById('chat-subtitle').textContent = t.chatSubtitle;
+            document.getElementById('suggestions-label').textContent = t.suggestionsLabel;
+            document.getElementById('send-text').textContent = t.sendText;
+            document.getElementById('chat-input').placeholder = t.inputPlaceholder;
+            
+            // Update suggestion buttons
+            document.querySelector('[data-suggestion="features"]').textContent = t.suggestions.features;
+            document.querySelector('[data-suggestion="download"]').textContent = t.suggestions.download;
+            document.querySelector('[data-suggestion="safety"]').textContent = t.suggestions.safety;
+            document.querySelector('[data-suggestion="redistribute"]').textContent = t.suggestions.redistribute;
+            document.querySelector('[data-suggestion="pricing"]').textContent = t.suggestions.pricing;
+            document.querySelector('[data-suggestion="support"]').textContent = t.suggestions.support;
+            
+            // Update welcome message
+            document.getElementById('welcome-message').innerHTML = t.welcomeMessage;
+        }
+
+        function askQuestion(type) {
+            const t = translations[currentLanguage];
+            const question = t.suggestions[type];
+            addMessage(question, 'user');
+            
+            setTimeout(() => {
+                const response = t.responses[type] || t.responses.default;
+                addMessage(response, 'bot');
+            }, 600);
+        }
+
+        function handleChat(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            addMessage(msg, 'user');
+            input.value = '';
+
+            // Show typing indicator
+            showTyping();
+
+            setTimeout(() => {
+                hideTyping();
+                const response = getResponse(msg.toLowerCase());
+                addMessage(response, 'bot');
+            }, 800);
+        }
+
+        function getResponse(msg) {
+            const t = translations[currentLanguage];
+            
+            // Keywords for each language
+            const keywords = {
+                features: ['feature', 'función', 'funciones', 'फीचर', 'fonctionnalité', 'can do', 'capability', 'what can'],
+                download: ['download', 'descargar', 'डाउनलोड', 'télécharger', 'install', 'instalar', 'इंस्टॉल', 'installer', 'get app'],
+                requirements: ['requirement', 'requisito', 'आवश्यकता', 'configuration', 'python', 'library', 'librería', 'लाइब्रेरी', 'bibliothèque'],
+                pricing: ['free', 'gratis', 'मुफ्त', 'gratuit', 'price', 'precio', 'कीमत', 'prix', 'cost', 'costo', 'pay'],
+                trial: ['trial', 'prueba', 'ट्रायल', 'essai', 'simulation', 'simulación', 'सिमुलेशन', 'practice', 'demo'],
+                safety: ['virus', 'malware', 'safe', 'secure', 'trojan', 'seguro', 'सुरक्षित', 'sûr', 'security', 'seguridad', 'सुरक्षा', 'sécurité', 'hack', 'spyware', 'dangerous'],
+                redistribute: ['modify', 'redistribute', 'resell', 'commercial', 'sell', 'distribution', 'redistribuir', 'vender', 'comercial', 'वितरण', 'बेचना', 'redistribuer', 'vendre', 'license', 'licencia', 'लाइसेंस', 'licence', 'copy', 'copiar'],
+                support: ['support', 'help', 'contact', 'issue', 'bug', 'ayuda', 'soporte', 'contacto', 'मदद', 'सहायता', 'aide', 'problème']
+            };
+            
+            for (const [key, words] of Object.entries(keywords)) {
+                if (words.some(word => msg.includes(word))) {
+                    return t.responses[key];
+                }
+            }
+            
+            return t.responses.default;
+        }
+
+        function addMessage(text, sender) {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `flex flex-col ${sender === 'user' ? 'items-end' : 'items-start'} message-enter`;
+            
+            if (sender === 'user') {
+                div.innerHTML = `
+                    <div class="bg-sky-500 text-slate-900 px-4 py-3 rounded-2xl rounded-tr-md text-sm max-w-[80%] font-medium">
+                        ${escapeHtml(text)}
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        </div>
+                        <div class="bg-slate-700 text-slate-200 px-4 py-3 rounded-2xl rounded-tl-md text-sm max-w-[80%] whitespace-pre-line">
+                            ${formatMessage(text)}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showTyping() {
+            const container = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.id = 'typing-indicator';
+            div.className = 'flex items-start gap-3 message-enter';
+            div.innerHTML = `
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                <div class="bg-slate-700 px-4 py-3 rounded-2xl rounded-tl-md">
+                    <div class="typing-indicator flex items-center gap-1">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatMessage(text) {
+            // Convert **bold** to <strong>
+            return text.replace(/\*\*(.*?)\*\*/g, '<strong class="text-sky-400">$1</strong>');
+        }
+    </script>
+</body>
+</html>

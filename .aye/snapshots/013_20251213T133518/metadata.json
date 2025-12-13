@@ -1,0 +1,14 @@
+{
+  "timestamp": "20251213T133518",
+  "files": [
+    {
+      "original": "D:\\3.6\\server.js",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\013_20251213T133518\\server.js"
+    },
+    {
+      "original": "D:\\3.6\\public\\index.html",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\013_20251213T133518\\index.html"
+    }
+  ],
+  "prompt": "i upload a file in product folder when user click to download allow him to download that and github redirect to github.com/choudharyrudra"
+}

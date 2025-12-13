@@ -1,0 +1,22 @@
+{
+  "timestamp": "20251213T120304",
+  "files": [
+    {
+      "original": "D:\\3.6\\package.json",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\001_20251213T120304\\package.json"
+    },
+    {
+      "original": "D:\\3.6\\server.js",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\001_20251213T120304\\server.js"
+    },
+    {
+      "original": "D:\\3.6\\public\\index.html",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\001_20251213T120304\\index.html"
+    },
+    {
+      "original": "D:\\3.6\\README.md",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\001_20251213T120304\\README.md"
+    }
+  ],
+  "prompt": "do change this index.html to a node project "
+}

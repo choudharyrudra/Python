@@ -1,0 +1,10 @@
+{
+  "timestamp": "20251213T122238",
+  "files": [
+    {
+      "original": "D:\\3.6\\public\\index.html",
+      "snapshot": "D:\\3.6\\.aye\\snapshots\\004_20251213T122238\\index.html"
+    }
+  ],
+  "prompt": "there is a demo.webp in gui folder add this into hero section behind the title and text and when user scroll to downward play webp forward and when scroll upwards and play backwards"
+}

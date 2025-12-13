@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat - Market Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Message Animation */
+        .message-enter {
+            animation: messageSlide 0.3s ease-out forwards;
+        }
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Typing Indicator */
+        .typing-dot {
+            animation: typingBounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Suggestion Button Hover */
+        .suggestion-btn {
+            transition: all 0.2s ease;
+        }
+        .suggestion-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+        }
+
+        /* Pulse animation for online status */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        .pulse-ring::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900/90 backdrop-blur-xl border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/" class="flex items-center gap-2 group">
+                    <div class="w-8 h-8 flex items-center justify-center bg-gradient-to-tr from-sky-500 to-emerald-500 rounded-lg">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    </div>
+                    <span class="text-lg font-bold text-white">MARKET<span class="text-sky-400">TERMINAL</span></span>
+                </a>
+                <span class="text-slate-600">|</span>
+                <span class="text-slate-400 text-sm font-medium">AI Support Chat</span>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <!-- Language Selector -->
+                <select id="language-select" class="bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:border-sky-500">
+                    <option value="en">🇺🇸 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="hi">🇮🇳 हिंदी</option>
+                    <option value="fr">🇫🇷 Français</option>
+                </select>
+                
+                <a href="/" class="text-slate-400 hover:text-white text-sm flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col max-w-5xl w-full mx-auto">
+        
+        <!-- Chat Messages Container -->
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 space-y-4">
+            
+            <!-- Welcome Message -->
+            <div class="flex gap-3 message-enter">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-semibold text-white">Market Terminal AI</span>
+                        <div class="relative w-2 h-2">
+                            <div class="absolute inset-0 rounded-full bg-emerald-500"></div>
+                            <div class="pulse-ring absolute inset-0 rounded-full"></div>
+                        </div>
+                        <span class="text-xs text-slate-500">Online</span>
+                    </div>
+                    <div class="bg-slate-800 rounded-2xl rounded-tl-md px-4 py-3 text-slate-200 max-w-2xl">
+                        <p class="mb-3" id="welcome-text">👋 Welcome to Market Terminal Support! I'm here to help you with:</p>
+                        <ul class="space-y-1 text-sm text-slate-400 mb-3">
+                            <li>• Installation & setup questions</li>
+                            <li>• Feature explanations</li>
+                            <li>• Troubleshooting issues</li>
+                            <li>• Licensing & safety information</li>
+                        </ul>
+                        <p class="text-sm text-slate-400" id="ask-text">How can I help you today?</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Quick Suggestions -->
+        <div id="suggestions" class="px-4 pb-2">
+            <div class="flex flex-wrap gap-2 justify-center">
+                <button onclick="askQuestion('How do I install Market Terminal?')" class="suggestion-btn px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full text-sm text-slate-300">
+                    📥 Installation Guide
+                </button>
+                <button onclick="askQuestion('What features does Market Terminal have?')" class="suggestion-btn px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full text-sm text-slate-300">
+                    ✨ Features
+                </button>
+                <button onclick="askQuestion('Is Market Terminal safe to use?')" class="suggestion-btn px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full text-sm text-slate-300">
+                    🛡️ Safety & Security
+                </button>
+                <button onclick="askQuestion('Can I modify and redistribute Market Terminal?')" class="suggestion-btn px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-full text-sm text-slate-300">
+                    📜 Licensing
+                </button>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-slate-900/50 border-t border-slate-800">
+            <form onsubmit="handleSubmit(event)" class="max-w-3xl mx-auto">
+                <div class="flex gap-3">
+                    <div class="flex-1 relative">
+                        <input 
+                            type="text" 
+                            id="chat-input" 
+                            placeholder="Type your question..." 
+                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 pr-12 text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition"
+                            autocomplete="off"
+                        >
+                        <button type="submit" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-sky-500 hover:bg-sky-400 rounded-lg flex items-center justify-center text-slate-900 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-center text-xs text-slate-600 mt-2">Press Enter to send • AI responses are automated</p>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        // Language translations
+        const translations = {
+            en: {
+                welcome: "👋 Welcome to Market Terminal Support! I'm here to help you with:",
+                ask: "How can I help you today?",
+                placeholder: "Type your question...",
+                thinking: "Thinking...",
+                responses: {
+                    install: "📥 **Installation Guide**\n\n1. **Download** the installer from our homepage\n2. **Run** the .exe file (Windows) or use Python directly\n3. **Install dependencies**: `pip install pandas yfinance matplotlib supabase`\n4. **Launch**: Run `python app.py`\n\nNeed help with a specific step?",
+                    features: "✨ **Key Features**\n\n• **Real-Time Data** - Live market feeds via YFinance\n• **Portfolio Tracking** - Monitor your holdings and P&L\n• **Cloud Sync** - Secure backup with Supabase\n• **Trial Mode** - Practice with simulated stocks\n• **CSV Export** - Export trade history for taxes\n\nWant details on any specific feature?",
+                    safety: "🛡️ **Safety & Security**\n\nMarket Terminal is 100% safe:\n\n• **Open Source** - All code is publicly viewable\n• **Trusted Libraries** - Uses only pandas, yfinance, matplotlib, supabase\n• **No Malware** - Antivirus flags are false positives (common for non-major publishers)\n• **Local Data** - Your data stays on your machine\n\nYou can inspect every line of code yourself!",
+                    license: "📜 **Licensing Information**\n\n⚠️ **Important**: Market Terminal is for **personal use only**.\n\n❌ You may NOT:\n• Modify and redistribute\n• Sell or resell\n• Use commercially\n\n✅ You MAY:\n• Use for personal trading/analysis\n• View source code for transparency\n\nAll rights reserved by the original author.",
+                    default: "I'm not sure about that specific question. Try asking about:\n\n• Installation & setup\n• Features & capabilities\n• Safety & security\n• Licensing & usage rights\n\nOr click one of the suggestion buttons above!"
+                }
+            },
+            es: {
+                welcome: "👋 ¡Bienvenido al Soporte de Market Terminal! Estoy aquí para ayudarte con:",
+                ask: "¿Cómo puedo ayudarte hoy?",
+                placeholder: "Escribe tu pregunta...",
+                thinking: "Pensando...",
+                responses: {
+                    install: "📥 **Guía de Instalación**\n\n1. **Descarga** el instalador desde nuestra página\n2. **Ejecuta** el archivo .exe (Windows) o usa Python directamente\n3. **Instala dependencias**: `pip install pandas yfinance matplotlib supabase`\n4. **Inicia**: Ejecuta `python app.py`\n\n¿Necesitas ayuda con algún paso específico?",
+                    features: "✨ **Características Principales**\n\n• **Datos en Tiempo Real** - Feeds de mercado via YFinance\n• **Seguimiento de Portafolio** - Monitorea tus activos y P&L\n• **Sincronización en la Nube** - Respaldo seguro con Supabase\n• **Modo Prueba** - Practica con acciones simuladas\n• **Exportar CSV** - Exporta historial para impuestos\n\n¿Quieres detalles sobre alguna característica?",
+                    safety: "🛡️ **Seguridad**\n\nMarket Terminal es 100% seguro:\n\n• **Código Abierto** - Todo el código es público\n• **Bibliotecas Confiables** - Solo usa pandas, yfinance, matplotlib, supabase\n• **Sin Malware** - Las alertas de antivirus son falsos positivos\n• **Datos Locales** - Tus datos permanecen en tu máquina\n\n¡Puedes inspeccionar cada línea de código!",
+                    license: "📜 **Información de Licencia**\n\n⚠️ **Importante**: Market Terminal es solo para **uso personal**.\n\n❌ NO puedes:\n• Modificar y redistribuir\n• Vender o revender\n• Usar comercialmente\n\n✅ SÍ puedes:\n• Usar para trading/análisis personal\n• Ver código fuente para transparencia",
+                    default: "No estoy seguro sobre esa pregunta. Intenta preguntar sobre:\n\n• Instalación y configuración\n• Características y capacidades\n• Seguridad\n• Licencias y derechos de uso"
+                }
+            },
+            hi: {
+                welcome: "👋 Market Terminal सपोर्ट में आपका स्वागत है! मैं यहाँ आपकी मदद के लिए हूँ:",
+                ask: "आज मैं आपकी कैसे मदद कर सकता हूँ?",
+                placeholder: "अपना सवाल लिखें...",
+                thinking: "सोच रहा हूँ...",
+                responses: {
+                    install: "📥 **इंस्टॉलेशन गाइड**\n\n1. हमारे होमपेज से इंस्टॉलर **डाउनलोड** करें\n2. .exe फ़ाइल **चलाएं** (Windows) या सीधे Python उपयोग करें\n3. **Dependencies इंस्टॉल करें**: `pip install pandas yfinance matplotlib supabase`\n4. **शुरू करें**: `python app.py` चलाएं\n\nकिसी विशेष चरण में मदद चाहिए?",
+                    features: "✨ **मुख्य विशेषताएं**\n\n• **रियल-टाइम डेटा** - YFinance के माध्यम से लाइव मार्केट फीड\n• **पोर्टफोलियो ट्रैकिंग** - अपनी होल्डिंग्स और P&L मॉनिटर करें\n• **क्लाउड सिंक** - Supabase के साथ सुरक्षित बैकअप\n• **ट्रायल मोड** - सिम्युलेटेड स्टॉक्स के साथ अभ्यास करें\n• **CSV एक्सपोर्ट** - टैक्स के लिए ट्रेड हिस्ट्री एक्सपोर्ट करें",
+                    safety: "🛡️ **सुरक्षा**\n\nMarket Terminal 100% सुरक्षित है:\n\n• **ओपन सोर्स** - सभी कोड सार्वजनिक रूप से देखने योग्य\n• **विश्वसनीय लाइब्रेरी** - केवल pandas, yfinance, matplotlib, supabase\n• **कोई मैलवेयर नहीं** - एंटीवायरस अलर्ट फॉल्स पॉजिटिव हैं\n• **लोकल डेटा** - आपका डेटा आपकी मशीन पर रहता है",
+                    license: "📜 **लाइसेंस जानकारी**\n\n⚠️ **महत्वपूर्ण**: Market Terminal केवल **व्यक्तिगत उपयोग** के लिए है।\n\n❌ आप नहीं कर सकते:\n• संशोधित और पुनर्वितरित\n• बेचना या पुनर्विक्रय\n• व्यावसायिक उपयोग\n\n✅ आप कर सकते हैं:\n• व्यक्तिगत ट्रेडिंग/विश्लेषण के लिए उपयोग\n• पारदर्शिता के लिए सोर्स कोड देखें",
+                    default: "मुझे उस विशेष प्रश्न के बारे में निश्चित नहीं है। इसके बारे में पूछने का प्रयास करें:\n\n• इंस्टॉलेशन और सेटअप\n• विशेषताएं और क्षमताएं\n• सुरक्षा\n• लाइसेंसिंग और उपयोग अधिकार"
+                }
+            },
+            fr: {
+                welcome: "👋 Bienvenue au Support Market Terminal! Je suis là pour vous aider avec:",
+                ask: "Comment puis-je vous aider aujourd'hui?",
+                placeholder: "Tapez votre question...",
+                thinking: "Réflexion...",
+                responses: {
+                    install: "📥 **Guide d'Installation**\n\n1. **Téléchargez** l'installateur depuis notre page d'accueil\n2. **Exécutez** le fichier .exe (Windows) ou utilisez Python directement\n3. **Installez les dépendances**: `pip install pandas yfinance matplotlib supabase`\n4. **Lancez**: Exécutez `python app.py`\n\nBesoin d'aide pour une étape spécifique?",
+                    features: "✨ **Fonctionnalités Clés**\n\n• **Données en Temps Réel** - Flux de marché via YFinance\n• **Suivi de Portefeuille** - Surveillez vos avoirs et P&L\n• **Sync Cloud** - Sauvegarde sécurisée avec Supabase\n• **Mode Essai** - Pratiquez avec des actions simulées\n• **Export CSV** - Exportez l'historique pour les impôts",
+                    safety: "🛡️ **Sécurité**\n\nMarket Terminal est 100% sûr:\n\n• **Open Source** - Tout le code est public\n• **Bibliothèques Fiables** - Utilise uniquement pandas, yfinance, matplotlib, supabase\n• **Pas de Malware** - Les alertes antivirus sont des faux positifs\n• **Données Locales** - Vos données restent sur votre machine",
+                    license: "📜 **Informations de Licence**\n\n⚠️ **Important**: Market Terminal est pour **usage personnel uniquement**.\n\n❌ Vous ne pouvez PAS:\n• Modifier et redistribuer\n• Vendre ou revendre\n• Utiliser commercialement\n\n✅ Vous POUVEZ:\n• Utiliser pour trading/analyse personnel\n• Voir le code source pour transparence",
+                    default: "Je ne suis pas sûr de cette question. Essayez de demander:\n\n• Installation et configuration\n• Fonctionnalités et capacités\n• Sécurité\n• Licences et droits d'utilisation"
+                }
+            }
+        };
+
+        let currentLang = 'en';
+
+        // Language selector
+        document.getElementById('language-select').addEventListener('change', function(e) {
+            currentLang = e.target.value;
+            updateUILanguage();
+        });
+
+        function updateUILanguage() {
+            const t = translations[currentLang];
+            document.getElementById('welcome-text').textContent = t.welcome;
+            document.getElementById('ask-text').textContent = t.ask;
+            document.getElementById('chat-input').placeholder = t.placeholder;
+        }
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            askQuestion(message);
+            input.value = '';
+        }
+
+        function askQuestion(question) {
+            const container = document.getElementById('chat-container');
+            const t = translations[currentLang];
+            
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'flex gap-3 justify-end message-enter';
+            userMsg.innerHTML = `
+                <div class="flex-1 flex justify-end">
+                    <div class="bg-sky-500 text-slate-900 rounded-2xl rounded-tr-md px-4 py-3 max-w-2xl font-medium">
+                        ${escapeHtml(question)}
+                    </div>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                </div>
+            `;
+            container.appendChild(userMsg);
+            
+            // Hide suggestions after first question
+            document.getElementById('suggestions').style.display = 'none';
+            
+            // Add typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.id = 'typing-indicator';
+            typingDiv.className = 'flex gap-3 message-enter';
+            typingDiv.innerHTML = `
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                <div class="flex-1">
+                    <div class="bg-slate-800 rounded-2xl rounded-tl-md px-4 py-3 max-w-2xl">
+                        <div class="flex items-center gap-1">
+                            <div class="w-2 h-2 bg-slate-500 rounded-full typing-dot"></div>
+                            <div class="w-2 h-2 bg-slate-500 rounded-full typing-dot"></div>
+                            <div class="w-2 h-2 bg-slate-500 rounded-full typing-dot"></div>
+                            <span class="ml-2 text-slate-500 text-sm">${t.thinking}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(typingDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            // Generate response
+            setTimeout(() => {
+                const typing = document.getElementById('typing-indicator');
+                if (typing) typing.remove();
+                
+                const response = generateResponse(question.toLowerCase());
+                addBotMessage(response);
+            }, 1000 + Math.random() * 1000);
+        }
+
+        function generateResponse(question) {
+            const t = translations[currentLang].responses;
+            
+            if (question.includes('install') || question.includes('setup') || question.includes('download') || question.includes('instalar') || question.includes('इंस्टॉल') || question.includes('télécharger')) {
+                return t.install;
+            }
+            if (question.includes('feature') || question.includes('can do') || question.includes('característica') || question.includes('विशेषता') || question.includes('fonctionnalité')) {
+                return t.features;
+            }
+            if (question.includes('safe') || question.includes('virus') || question.includes('security') || question.includes('secure') || question.includes('seguro') || question.includes('सुरक्षित') || question.includes('sécurité')) {
+                return t.safety;
+            }
+            if (question.includes('license') || question.includes('redistribute') || question.includes('modify') || question.includes('sell') || question.includes('commercial') || question.includes('licencia') || question.includes('लाइसेंस') || question.includes('licence')) {
+                return t.license;
+            }
+            
+            return t.default;
+        }
+
+        function addBotMessage(text) {
+            const container = document.getElementById('chat-container');
+            
+            const botMsg = document.createElement('div');
+            botMsg.className = 'flex gap-3 message-enter';
+            botMsg.innerHTML = `
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="font-semibold text-white">Market Terminal AI</span>
+                    </div>
+                    <div class="bg-slate-800 rounded-2xl rounded-tl-md px-4 py-3 text-slate-200 max-w-2xl whitespace-pre-line">
+                        ${formatMessage(text)}
+                    </div>
+                </div>
+            `;
+            container.appendChild(botMsg);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function formatMessage(text) {
+            // Convert **bold** to <strong>
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong class="text-white">$1</strong>');
+            // Convert `code` to <code>
+            text = text.replace(/`(.+?)`/g, '<code class="bg-slate-700 px-1 rounded text-sky-400">$1</code>');
+            return text;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Focus input on load
+        document.getElementById('chat-input').focus();
+    </script>
+</body>
+</html>
