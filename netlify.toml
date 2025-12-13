@@ -1,0 +1,21 @@
+[build]
+  publish = "public"
+  command = ""
+
+# Redirect /chat to chat.html (mimics server.js app.get('/chat'))
+[[redirects]]
+  from = "/chat"
+  to = "/chat.html"
+  status = 200
+
+# SPA Fallback: Serve index.html for client-side routing (but files like app.py are served first)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Force downloads for .py files (optional, ensures direct download)
+[[headers]]
+  for = "/product/*.py"
+  [headers.values]
+    Content-Disposition = "attachment"
